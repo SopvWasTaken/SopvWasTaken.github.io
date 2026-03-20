@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Totally Not Ratchet & Clank 3 Hacker Puzzle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Unbounded', sans-serif;
+      background: linear-gradient(135deg, #121b22 0%, #1f2b35 100%);
+      color: #e0e8f0;
+      flex-direction: row;
+      overflow: hidden;
+    }
+    canvas {
+      /* Removed fixed CSS size to allow flex layout */
+      border: 2px solid #5a7f93;
+      background: #0a1a25;
+      border-radius: 12px;
+      display: block;
+      box-shadow: 0 0 25px rgba(0,0,0,0.5);
+    }
+    .panel {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 30px;
+      max-width: 350px;
+      height: 100vh;
+      box-sizing: border-box;
+    }
+    .left-panel { align-items: flex-start; text-align: left; }
+    .right-panel { align-items: center; }
+    h1 {
+      font-size: 28px;
+      color: #5cdb95;
+      margin-bottom: 20px;
+      line-height: 1.2;
+      text-transform: uppercase;
+    }
+    .hud {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .hud div {
+      background: rgba(10, 19, 30, 0.85);
+      border: 1px solid #34738f;
+      border-radius: 10px;
+      padding: 8px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .hud input[type=range] {
+      width: 100px;
+      cursor: pointer;
+    }
+    #speedLabel { min-width: 90px; text-align: right; }
+    #laneDisplay { min-width: 90px; text-align: right; }
+    .instruction {
+      font-size: 13px;
+      line-height: 1.4;
+      color: #aac4d8;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #5cdb95;
+    }
+    .legend {
+      margin-bottom: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+    .icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 1px solid #fff;
+      display: inline-block;
+    }
+    .icon.green { background-color: #5cdb95; }
+    .icon.red { background-color: #ff6b6b; }
+    .icon.shield { background-color: #00d1ff; }
+    .status {
+      margin-top: 10px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #e0e8f0;
+    }
+    .status.gameover {
+      color: #ff6b6b;
+    }
+    .btn {
+      margin-top: 8px;
+      border: none;
+      background: linear-gradient(90deg,#41ad79,#2d9dc6);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .overlay {
+      position: fixed;
+      left: 0;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    .overlay.hidden { display: none; }
+    .gameover-box {
+      background: #11242f;
+      border: 2px solid #52b2ff;
+      padding: 24px;
+      border-radius: 12px;
+      color: #fff;
+      text-align: center;
+      width: 280px;
+    }
+    .gameover-box h2 {
+      margin: 0 0 10px;
+    }
+    .shortcut-hint {
+      margin-top: 10px;
+      font-size: 12px;
+      color: #8899a6;
+    }
+  </style>
+</head>
+<body>
+  <div class="panel left-panel">
+    <h1>Totally Not Ratchet & Clank 3 Hacker Puzzle</h1>
+    <div class="legend">
+      <div class="legend-item">
+        <span class="icon green"></span>
+        <span>Grab to score points</span>
+      </div>
+      <div class="legend-item">
+        <span class="icon red"></span>
+        <span>Blast to destroy</span>
+      </div>
+      <div class="legend-item">
+        <span class="icon shield"></span>
+        <span>Blocks your shots</span>
+      </div>
+    </div>
+    <div class="instruction">
+      Use left/right arrow to choose a lane. Fire from the outer ring.<br><br>
+      Press X to grab nearest green in selected lane.<br>
+      Press Z to blast nearest red in selected lane (shields block the beam).<br><br>
+      If red reaches outer edge of any lane, game over.
+    </div>
+  </div>
+
+  <canvas id="canvas" width="660" height="660"></canvas>
+
+  <div class="panel right-panel">
+    <div class="hud">
+      <div>Score: <span id="score">0</span></div>
+      <div>Lanes: <input id="laneCount" type="range" min="5" max="20" value="8" /> <span id="laneDisplay">8</span></div>
+      <div>Speed: <input id="speedControl" type="range" min="1" max="10" value="5" /> <span id="speedLabel">Medium</span></div>
+    </div>
+  </div>
+
+  <div id="gameover" class="overlay hidden">
+    <div class="gameover-box">
+      <h2>Game Over</h2>
+      <p>Score: <span id="gameoverScore">0</span></p>
+      <button id="gameoverRestart" class="btn">Play Again</button>
+      <div class="shortcut-hint">Or Space Key</div>
+    </div>
+  </div>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const speedLabel = document.getElementById('speedLabel');
+    const laneCountSlider = document.getElementById('laneCount');
+    const laneDisplay = document.getElementById('laneDisplay');
+    const speedControl = document.getElementById('speedControl');
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    let lanes = 8;
+    let ringSteps = 8;
+    let stepRadius = 50;
+
+    let objects = [];
+    let selectedLane = 0;
+    let displayLane = 0;
+    let score = 0;
+    let gameOver = false;
+    let spawnTimer;
+    let moveTimer;
+    let shieldTimers = new Array(lanes).fill(0);
+    let animationFrameId;
+
+    let actionEffect = null;
+    const actionEffectDuration = 140;
+    let laneAnimation = { active: false, from:0, to:0, start:0, duration:140 };
+
+    const typeColors = {
+      green: '#5cdb95',
+      red: '#ff6b6b',
+      shield: '#00d1ff'
+    };
+
+    function resetGame() {
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      updateSettingsFromUI();
+      objects = [];
+      selectedLane = 0;
+      displayLane = 0;
+      laneAnimation.active = false;
+      score = 0;
+      gameOver = false;
+      scoreEl.textContent = score;
+      document.getElementById('gameover').classList.add('hidden');
+      updateShieldText();
+      clearInterval(spawnTimer);
+      clearInterval(moveTimer);
+
+      const speed = getSpeedSettings();
+      spawnTimer = setInterval(spawnWave, speed.spawnInterval);
+      moveTimer = setInterval(gameTick, speed.moveInterval);
+      updateSpeedLabel();
+      draw();
+    }
+
+    function spawnWave() {
+      if (gameOver) return;
+      // spawn 1-5 objects from the center (position 0) in random lanes
+      const maxSpawn = Math.min(5, lanes);
+      const count = Math.floor(Math.random() * maxSpawn) + 1;
+      const candidateLanes = Array.from({ length: lanes }, (_, i) => i);
+      for (let i = 0; i < count; i++) {
+        if (candidateLanes.length === 0) break;
+        const pick = Math.floor(Math.random() * candidateLanes.length);
+        const lane = candidateLanes.splice(pick, 1)[0];
+        const r = Math.random();
+        const type = r < 0.45 ? 'red' : r < 0.8 ? 'green' : 'shield';
+        const position = 0;
+        objects.push({ lane, position, type });
+      }
+    }
+
+    function getTopLane() {
+      return Math.round(displayLane) % lanes;
+    }
+
+    function startLaneTransition(nextLane) {
+      laneAnimation.active = true;
+      laneAnimation.from = displayLane;
+      laneAnimation.to = nextLane;
+      laneAnimation.start = performance.now();
+      laneAnimation.duration = 140;
+    }
+
+    function updateLaneAnimation() {
+      if (!laneAnimation.active) return;
+      const now = performance.now();
+      const elapsed = Math.min(now - laneAnimation.start, laneAnimation.duration);
+      const progress = elapsed / laneAnimation.duration;
+      const shortest = ((laneAnimation.to - laneAnimation.from + lanes + lanes/2) % lanes) - lanes/2;
+      displayLane = ((laneAnimation.from + shortest * progress) % lanes + lanes) % lanes;
+      if (elapsed >= laneAnimation.duration) {
+        displayLane = laneAnimation.to;
+        laneAnimation.active = false;
+      }
+    }
+
+    function gameTick() {
+      if (gameOver) return;
+      const now = Date.now();
+      for (let i = objects.length - 1; i >= 0; i--) {
+        const obj = objects[i];
+        obj.position += 1;
+        if (obj.position >= ringSteps - 1) {
+          if (obj.type === 'red') {
+            endGame();
+            return;
+          }
+          if (obj.type === 'shield') {
+            activateShield(obj.lane);
+          }
+          objects.splice(i, 1);
+        }
+      }
+      for (let l = 0; l < lanes; l++) {
+        if (shieldTimers[l] > 0 && shieldTimers[l] < now) {
+          shieldTimers[l] = 0;
+          updateShieldText();
+        }
+      }
+      updateUI();
+      requestAnimationFrame(draw);
+    }
+
+    function activateShield(lane) {
+      // shieldTimers[lane] = Date.now() + 5000; // Shields no longer protect from Game Over
+      updateShieldText();
+    }
+
+    function updateShieldText() {
+      // no HUD display required for shields anymore.
+    }
+
+    function updateSettingsFromUI() {
+      let requested = parseInt(laneCountSlider.value, 10);
+      if (Number.isNaN(requested) || requested < 5) requested = 5;
+      if (requested > 20) requested = 20;
+      lanes = requested;
+      ringSteps = Math.min(22, Math.max(6, lanes + 4));
+      stepRadius = Math.max(12, Math.min(32, 280 / ringSteps));
+      if (selectedLane >= lanes) selectedLane = 0;
+      if (displayLane >= lanes) displayLane = 0;
+      shieldTimers = new Array(lanes).fill(0);
+      laneCountSlider.value = lanes;
+      laneDisplay.textContent = lanes;
+    }
+
+    function getSpeedSettings() {
+      const value = Number(speedControl.value);
+      const laneFactor = Math.max(1, (20 - lanes) * 6); // fewer lanes = slower base
+      const spawn = 2600 - value * 210 + laneFactor;
+      const movement = 350 - value * 24 + Math.floor(laneFactor / 2);
+      return {
+        spawnInterval: Math.max(300, spawn),
+        moveInterval: Math.max(100, movement),
+      };
+    }
+
+    function updateSpeedLabel() {
+      const names = ['Very Slow', 'Slow', 'Medium', 'Fast', 'Very Fast', 'Extreme'];
+      const index = Math.min(names.length - 1, Math.floor((Number(speedControl.value) - 1) / 2));
+      speedLabel.textContent = names[index];
+    }
+
+    function updateUI() {
+      scoreEl.textContent = score;
+    }
+
+    function showGameOver() {
+      const overlay = document.getElementById('gameover');
+      const scoreDisplay = document.getElementById('gameoverScore');
+      overlay.classList.remove('hidden');
+      scoreDisplay.textContent = score;
+    }
+
+    function endGame() {
+      gameOver = true;
+      clearInterval(spawnTimer);
+      cancelAnimationFrame(animationFrameId);
+      clearInterval(moveTimer);
+      showGameOver();
+    }
+
+    function operateAction(action) {
+      if (gameOver) return;
+      // Get objects in the selected lane
+      const laneObjects = objects.filter(o => o.lane === selectedLane);
+      
+      // Sort descending (Closest to Player/Edge -> Closest to Center)
+      laneObjects.sort((a, b) => b.position - a.position);
+
+      if (laneObjects.length === 0) return;
+
+      let target = null;
+
+      if (action === 'blast') {
+        // Find nearest valid target (Red), blocked by Shield
+        for (const obj of laneObjects) {
+          if (obj.type === 'shield') {
+            target = obj; // Beam hits shield
+            break; 
+          }
+          if (obj.type === 'red') {
+            target = obj; // Beam hits red
+            break;
+          }
+          if (obj.type === 'green') {
+            target = obj; // Beam hits green
+            break;
+          }
+        }
+      } else if (action === 'grab') {
+        // Find nearest Green, blocked by Shield (and maybe Red?)
+        for (const obj of laneObjects) {
+          if (obj.type === 'shield') {
+            target = null; // Blocked
+            break;
+          }
+          if (obj.type === 'green') {
+            target = obj; // Grab green
+            break;
+          }
+        }
+      }
+      if (!target) return;
+
+      if (action === 'blast') {
+        // If we hit red or green, destroy it.
+        if (target.type === 'red' || target.type === 'green') {
+          objects = objects.filter(obj => obj !== target);
+        }
+      } else if (action === 'grab') {
+        if (target.type === 'green') {
+          score += 1;
+          objects = objects.filter(obj => obj !== target);
+        }
+      }
+
+      actionEffect = {
+        type: action,
+        lane: selectedLane,
+        timestamp: Date.now(),
+        targetPos: target.position,
+      };
+
+      updateUI();
+      requestAnimationFrame(draw);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.translate(centerX, centerY);
+      // draw ring background
+      for (let r = 1; r <= ringSteps; r++) {
+        ctx.beginPath();
+        ctx.arc(0, 0, r * stepRadius, 0, Math.PI * 2);
+        ctx.strokeStyle = '#3b5361';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      updateLaneAnimation();
+      // draw lanes (selected lane is at top; board orientation changes by input only)
+      for (let i = 0; i < lanes; i++) {
+        const angle = (((i - displayLane + lanes) % lanes) / lanes) * Math.PI * 2 - Math.PI / 2;
+        const x = Math.cos(angle) * ringSteps * stepRadius;
+        const y = Math.sin(angle) * ringSteps * stepRadius;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(x, y);
+        ctx.strokeStyle = '#2f4f67';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Draw static player aim line (Always at top / -90deg)
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(0, -(ringSteps * stepRadius));
+      ctx.strokeStyle = '#cee6ff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Draw objects with rotation offset so selected lane is top
+      objects.forEach(obj => {
+        const angle = (((obj.lane - displayLane + lanes) % lanes) / lanes) * Math.PI * 2 - Math.PI / 2;
+        const dist = (obj.position + 1) * stepRadius;
+        const x = Math.cos(angle) * dist;
+        const y = Math.sin(angle) * dist;
+        ctx.beginPath();
+        ctx.arc(x, y, 16, 0, Math.PI * 2);
+        ctx.fillStyle = typeColors[obj.type];
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      });
+
+      // action visual effect line from top shooter (downward path)
+      if (actionEffect && Date.now() - actionEffect.timestamp < actionEffectDuration) {
+        const elapsed = Date.now() - actionEffect.timestamp;
+        const t = 1 - elapsed / actionEffectDuration;
+        const angle = (((actionEffect.lane - displayLane + lanes) % lanes) / lanes) * Math.PI * 2 - Math.PI / 2;
+        const targetDist = (actionEffect.targetPos + 1) * stepRadius;
+        const targetX = Math.cos(angle) * targetDist;
+        const targetY = Math.sin(angle) * targetDist;
+        const topY = -(ringSteps * stepRadius);
+        const effectColor = actionEffect.type === 'blast' ? `rgba(255, 99, 71, ${t * 0.9})` : `rgba(92, 219, 149, ${t * 0.9})`;
+        ctx.strokeStyle = effectColor;
+        ctx.lineWidth = 8 * t;
+        ctx.beginPath();
+        ctx.moveTo(0, topY);
+        ctx.lineTo(targetX, targetY);
+        ctx.stroke();
+      }
+
+      // draw top shooter
+      const shooterRadius = 16;
+      const shooterY = -(ringSteps * stepRadius);
+      ctx.fillStyle = '#f7f38b';
+      ctx.beginPath();
+      ctx.arc(0, shooterY, shooterRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#ffb347';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.restore();
+
+      if (!gameOver) animationFrameId = requestAnimationFrame(draw);
+    }
+
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      if (gameOver && e.key !== 'r' && e.key !== ' ') return;
+      switch (e.key) {
+        case 'ArrowLeft':
+          const nextLeft = (selectedLane + lanes - 1) % lanes;
+          selectedLane = nextLeft;
+          startLaneTransition(nextLeft);
+          break;
+        case 'ArrowRight':
+          const nextRight = (selectedLane + 1) % lanes;
+          selectedLane = nextRight;
+          startLaneTransition(nextRight);
+          break;
+        case 'x':
+        case 'X':
+          operateAction('grab');
+          break;
+        case 'z':
+        case 'Z':
+          operateAction('blast');
+          break;
+        case 'r':
+        case 'R':
+        case ' ':
+          if (gameOver) resetGame();
+          break;
+      }
+    });
+
+    speedControl.addEventListener('input', () => {
+      updateSpeedLabel();
+      if (!gameOver) {
+        clearInterval(spawnTimer);
+        clearInterval(moveTimer);
+        const speed = getSpeedSettings();
+        spawnTimer = setInterval(spawnWave, speed.spawnInterval);
+        moveTimer = setInterval(gameTick, speed.moveInterval);
+      }
+    });
+
+    laneCountSlider.addEventListener('input', () => {
+      laneDisplay.textContent = laneCountSlider.value;
+      updateSettingsFromUI();
+      if (!gameOver) resetGame();
+    });
+
+    document.getElementById('gameoverRestart').addEventListener('click', () => {
+      document.getElementById('gameover').classList.add('hidden');
+      resetGame();
+    });
+
+    resetGame();
+  </script>
+</body>
+</html>
