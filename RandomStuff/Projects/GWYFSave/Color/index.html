@@ -1,14 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Simple Gamble With Your Friends Save Editor</title>
-    <meta name="description" content="Local save editor for Simple Gamble With Your Friends. Edit money, tickets, seed, and player organs in-browser.">
-    <meta property="og:title" content="Simple Gamble With Your Friends Save Editor">
-    <meta property="og:description" content="Edit GWYF save files locally in your browser. Change money, tickets, seed, and player organ state.">
+    <title>Simple Gamble With Your Friends Skin Color Changer</title>
+    <meta name="description" content="Edit player skin color in Simple Gamble With Your Friends. Change color and unlock all cosmetics.">
+    <meta property="og:title" content="Simple Gamble With Your Friends Skin Color Changer">
+    <meta property="og:description" content="Edit player skin color and unlock cosmetics in GWYF">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="Simple Gamble With Your Friends Save Editor">
+    <meta property="og:site_name" content="Simple Gamble With Your Friends Skin Color Changer">
     <style>
         :root {
             color-scheme: dark;
@@ -86,7 +86,8 @@
         }
         .field input[type="text"],
         .field input[type="number"],
-        .field input[type="file"] {
+        .field input[type="file"],
+        .field input[type="color"] {
             width: 100%;
             padding: 0.95rem 1rem;
             border-radius: 14px;
@@ -98,6 +99,10 @@
         .field input[type="file"] {
             cursor: pointer;
             padding: 0.65rem 0.85rem;
+        }
+        .field input[type="color"] {
+            padding: 0.6rem;
+            height: 3rem;
         }
         .actions {
             display: flex;
@@ -127,30 +132,6 @@
             cursor: not-allowed;
             box-shadow: none;
         }
-        .organ-grid {
-            display: grid;
-            gap: 1rem;
-        }
-        .organ-card {
-            padding: 1rem;
-            border-radius: 18px;
-            background: rgba(7, 15, 28, 0.85);
-            border: 1px solid rgba(255,255,255,0.08);
-        }
-        .organ-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem;
-            align-items: center;
-        }
-        .organ-row input[type="checkbox"] {
-            accent-color: #6c8cff;
-            width: 1.15rem;
-            height: 1.15rem;
-        }
-        .organ-row label {
-            user-select: none;
-        }
         .notice {
             margin-top: 0.75rem;
             padding: 1rem 1.1rem;
@@ -164,14 +145,14 @@
             color: #a2b0ff;
             font-size: 0.95rem;
         }
-        @media (min-width: 760px) {
-            .field-grid-3 {
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 1rem;
-            }
-            .organ-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
+        .field-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        @media (max-width: 600px) {
+            .field-grid-2 {
+                grid-template-columns: 1fr;
             }
         }
         .nav-footer {
@@ -261,50 +242,45 @@
 <body>
     <div class="frame">
         <header>
-            <h1>Simple Gamble With Your Friends Save Editor</h1>
-            <p>Upload a local save file and edit the key values directly in your browser. Your save file is found at: </p>
-            <p>%appdata%\..\LocalLow\TENSTACK\Gamble With Your Friends\Saves</p>
+            <h1>Simple Gamble With Your Friends Skin Color Changer</h1>
+            <p>Upload your cosmetics JSON file from:</p>
+            <p>%appdata%\..\LocalLow\TENSTACK\Gamble With Your Friends</p>
         </header>
 
         <section class="card">
-            <h2>Step 1: Upload your save file</h2>
+            <h2>Step 1: Upload your cosmetics file</h2>
             <div class="field-group">
                 <div class="field">
-                    <label for="saveFile">Choose JSON save file</label>
-                    <input id="saveFile" type="file" accept=".json" />
+                    <label for="colorFile">Choose JSON cosmetics file</label>
+                    <input id="colorFile" type="file" accept=".json" />
                 </div>
                 <div class="actions">
-                    <button id="loadButton" type="button" disabled>Load Save</button>
-                    <button id="downloadButton" type="button" disabled>Download Edited Save</button>
+                    <button id="loadButton" type="button" disabled>Load File</button>
+                    <button id="downloadButton" type="button" disabled>Download Edited File</button>
                 </div>
                 <p class="status" id="fileStatus">No file loaded yet.</p>
             </div>
         </section>
 
         <section class="card" id="editorSection" style="display: none;">
-            <h2>Save editor</h2>
-            <div class="notice">Edit money, tickets, and seed values.</div>
-            <div class="field-grid-3">
+            <h2>Color Editor</h2>
+            <div class="notice">Edit your player skin color using the color picker.</div>
+            <div class="field-grid-2">
                 <div class="field">
-                    <label for="moneyInput">Money</label>
-                    <input id="moneyInput" type="number" min="0" step="1" />
+                    <label for="colorPicker">Pick a color</label>
+                    <input id="colorPicker" type="color" />
                 </div>
                 <div class="field">
-                    <label for="ticketsInput">Tickets</label>
-                    <input id="ticketsInput" type="number" min="0" step="1" />
-                </div>
-                <div class="field">
-                    <label for="seedInput">Seed</label>
-                    <input id="seedInput" type="number" step="1" />
+                    <label for="hexInput">Hex Code (without #)</label>
+                    <input id="hexInput" type="text" maxlength="6" placeholder="FFFFFF" />
                 </div>
             </div>
-            <div class="status" id="saveInfo"></div>
         </section>
 
-        <section class="card" id="organsSection" style="display: none;">
-            <h2>Player organ states</h2>
-            <div class="notice">Toggle organs on or off for each persons entry.</div>
-            <div class="organ-grid" id="organGrid"></div>
+        <section class="card" id="cosmeticsSection" style="display: none;">
+            <h2>Cosmetics</h2>
+            <button id="unlockButton" type="button">Unlock All Cosmetics</button>
+            <div class="status" id="cosmeticsStatus"></div>
         </section>
     </div>
 
@@ -319,115 +295,91 @@
     </div>
 
     <nav class="nav-footer">
-        <a href="Color/index.html" style="text-decoration: none;"><button type="button">Go to Skin Color Changer</button></a>
+        <a href="../index.html" style="text-decoration: none;"><button type="button">Go to Save File Editor</button></a>
     </nav>
 
     <script>
-        const fileInput = document.getElementById('saveFile');
+        const fileInput = document.getElementById('colorFile');
         const loadButton = document.getElementById('loadButton');
         const downloadButton = document.getElementById('downloadButton');
         const editorSection = document.getElementById('editorSection');
-        const organsSection = document.getElementById('organsSection');
+        const cosmeticsSection = document.getElementById('cosmeticsSection');
         const fileStatus = document.getElementById('fileStatus');
         const saveInfo = document.getElementById('saveInfo');
-        const organGrid = document.getElementById('organGrid');
-        const moneyInput = document.getElementById('moneyInput');
-        const ticketsInput = document.getElementById('ticketsInput');
-        const seedInput = document.getElementById('seedInput');
+        const cosmeticsStatus = document.getElementById('cosmeticsStatus');
+        const colorPicker = document.getElementById('colorPicker');
+        const hexInput = document.getElementById('hexInput');
+        const unlockButton = document.getElementById('unlockButton');
 
         let loadedFileName = '';
-        let saveData = null;
+        let colorData = null;
+        let allCosmeticsUnlocked = false;
+
+        // All cosmetics from 1 to 217
+        const allCosmeticIds = Array.from({length: 217}, (_, i) => i + 1);
 
         function renderEditor() {
-            if (!saveData) return;
+            if (!colorData) return;
             editorSection.style.display = 'block';
-            organsSection.style.display = 'block';
-            moneyInput.value = Number(saveData.money ?? 0);
-            ticketsInput.value = Number(saveData.tickets ?? 0);
-            seedInput.value = Number(saveData.seed ?? 0);
-            saveInfo.textContent = `Loaded ${saveData.saveName || loadedFileName} · Money: ${moneyInput.value} · Tickets: ${ticketsInput.value} · Seed: ${seedInput.value}`;
-            renderOrganGrid();
+            cosmeticsSection.style.display = 'block';
+
+            // Extract hex color (first 6 characters, ignore FF at end)
+            const fullColor = colorData.playerColorHex || '000000FF';
+            const hexColor = fullColor.substring(0, 6);
+
+            colorPicker.value = '#' + hexColor;
+            hexInput.value = hexColor.toUpperCase();
+            cosmeticsStatus.textContent = allCosmeticsUnlocked ? '✓ All cosmetics unlocked' : 'Click "Unlock All Cosmetics" to unlock them';
         }
 
-        function renderOrganGrid() {
-            organGrid.innerHTML = '';
-            if (!saveData || !Array.isArray(saveData.playerOrganStates) || saveData.playerOrganStates.length === 0) {
-                organGrid.innerHTML = '<p style="grid-column: 1 / -1; color: #d7ddff;">No player organ state entries found in this save.</p>';
-                return;
+        function updateColorPreview(hex) {
+            colorPreview.style.backgroundColor = '#' + hex;
+        }
+
+        function syncColorInputs(fromPicker = false) {
+            if (fromPicker) {
+                const hex = colorPicker.value.substring(1).toUpperCase();
+                hexInput.value = hex;
+            } else {
+                const hex = hexInput.value.toUpperCase();
+                if (hex.length === 6 && /^[0-9A-F]{6}$/.test(hex)) {
+                    colorPicker.value = '#' + hex;
+                }
             }
-            saveData.playerOrganStates.forEach((entry, index) => {
-                const card = document.createElement('div');
-                card.className = 'organ-card';
-                card.innerHTML = `
-                    <div style="margin-bottom: 1rem;">
-                        <strong>SteamID</strong><br />
-                        <span style="color: #aac4ff;">${entry.steamId || 'unknown'}</span>
-                    </div>
-                    <div class="organ-row">
-                        <label><input type="checkbox" data-entry="${index}" data-key="leftEye" ${entry.leftEye ? 'checked' : ''} /> leftEye</label>
-                        <label><input type="checkbox" data-entry="${index}" data-key="rightEye" ${entry.rightEye ? 'checked' : ''} /> rightEye</label>
-                        <label><input type="checkbox" data-entry="${index}" data-key="body" ${entry.body ? 'checked' : ''} /> body</label>
-                        <label><input type="checkbox" data-entry="${index}" data-key="mouth" ${entry.mouth ? 'checked' : ''} /> mouth</label>
-                    </div>
-                `;
-                organGrid.appendChild(card);
-            });
-
-            organGrid.querySelectorAll('input[type="checkbox"]').forEach(input => {
-                input.addEventListener('change', event => {
-                    const target = event.target;
-                    const entryIndex = Number(target.dataset.entry);
-                    const key = target.dataset.key;
-                    if (!saveData || !saveData.playerOrganStates || !saveData.playerOrganStates[entryIndex]) return;
-                    saveData.playerOrganStates[entryIndex][key] = target.checked;
-                });
-            });
+            if (colorData) {
+                colorData.playerColorHex = hexInput.value.toUpperCase() + 'FF';
+            }
         }
 
-        function updateSaveDataField(key, inputElement) {
-            if (!saveData) return;
-            const value = inputElement.value;
-            saveData[key] = Number(value);
-            saveInfo.textContent = `Loaded ${saveData.saveName || loadedFileName} · Money: ${saveData.money} · Tickets: ${saveData.tickets} · Seed: ${saveData.seed}`;
-        }
-
-        function downloadSave() {
-            if (!saveData) return;
-            downloadButton.disabled = true;
-            showCoinFlip(() => {
-                const jsonText = JSON.stringify(saveData, null, 4);
-                const blob = new Blob([jsonText], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = loadedFileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-                downloadButton.disabled = false;
-            });
+        function unlockAllCosmetics() {
+            if (!colorData) return;
+            colorData.unlockedCosmetics = allCosmeticIds;
+            allCosmeticsUnlocked = true;
+            cosmeticsStatus.textContent = '✓ All cosmetics unlocked';
+            unlockButton.disabled = true;
         }
 
         loadButton.addEventListener('click', () => {
             const file = fileInput.files?.[0];
             if (!file) {
-                fileStatus.textContent = 'Please choose a JSON save file first.';
+                fileStatus.textContent = 'Please choose a JSON file first.';
                 return;
             }
             const reader = new FileReader();
             reader.onload = () => {
                 try {
-                    saveData = JSON.parse(reader.result);
+                    colorData = JSON.parse(reader.result);
                     loadedFileName = file.name;
-                    fileStatus.textContent = `Loaded ${file.name}. You can now edit values and download the updated save.`;
+                    fileStatus.textContent = `Loaded ${file.name}. You can now edit the color and manage cosmetics.`;
                     downloadButton.disabled = false;
+                    allCosmeticsUnlocked = false;
+                    unlockButton.disabled = false;
                     renderEditor();
                 } catch (error) {
-                    saveData = null;
-                    fileStatus.textContent = 'Invalid JSON file. Please choose a valid game save JSON file.';
+                    colorData = null;
+                    fileStatus.textContent = 'Invalid JSON file. Please choose a valid cosmetics JSON file.';
                     editorSection.style.display = 'none';
-                    organsSection.style.display = 'none';
+                    cosmeticsSection.style.display = 'none';
                     downloadButton.disabled = true;
                 }
             };
@@ -440,13 +392,32 @@
         fileInput.addEventListener('change', () => {
             loadButton.disabled = !fileInput.files?.length;
             if (fileInput.files?.length) {
-                fileStatus.textContent = `Selected ${fileInput.files[0].name}. Press Load Save to open it.`;
+                fileStatus.textContent = `Selected ${fileInput.files[0].name}. Press Load File to open it.`;
             }
         });
 
-        moneyInput.addEventListener('input', () => updateSaveDataField('money', moneyInput));
-        ticketsInput.addEventListener('input', () => updateSaveDataField('tickets', ticketsInput));
-        seedInput.addEventListener('input', () => updateSaveDataField('seed', seedInput));
+        colorPicker.addEventListener('input', () => syncColorInputs(true));
+        hexInput.addEventListener('input', () => syncColorInputs(false));
+
+        unlockButton.addEventListener('click', unlockAllCosmetics);
+
+        downloadButton.addEventListener('click', () => {
+            if (!colorData) return;
+            downloadButton.disabled = true;
+            showCoinFlip(() => {
+                const jsonText = JSON.stringify(colorData, null, 4);
+                const blob = new Blob([jsonText], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = loadedFileName;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+                downloadButton.disabled = false;
+            });
+        });
 
         function showCoinFlip(onSuccess) {
             const coinModal = document.getElementById('coinModal');
@@ -485,8 +456,6 @@
                 }
             }, 2700);
         }
-
-        downloadButton.addEventListener('click', downloadSave);
     </script>
 </body>
 </html>
