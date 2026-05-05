@@ -1,0 +1,353 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple Gamble With Your Friends Save Editor</title>
+    <meta name="description" content="Local save editor for Simple Gamble With Your Friends. Edit money, tickets, seed, and player organs in-browser.">
+    <meta property="og:title" content="Simple Gamble With Your Friends Save Editor">
+    <meta property="og:description" content="Edit GWYF save files locally in your browser. Change money, tickets, seed, and player organ state.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Simple Gamble With Your Friends Save Editor">
+    <style>
+        :root {
+            color-scheme: dark;
+            background: #0c1220;
+            color: #f2f5ff;
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+        * {
+            box-sizing: border-box;
+        }
+        html, body {
+            min-height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+            background: radial-gradient(circle at top, rgba(100, 150, 255, 0.16), transparent 30%),
+                        radial-gradient(circle at bottom right, rgba(140, 70, 255, 0.12), transparent 28%),
+                        #07101b;
+        }
+        .frame {
+            width: min(1100px, 100%);
+            max-height: calc(100vh - 2rem);
+            padding: 1.5rem;
+            border-radius: 28px;
+            background: rgba(15, 23, 42, 0.94);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+            overflow-y: auto;
+        }
+        header {
+            display: grid;
+            gap: 0.75rem;
+            margin-bottom: 2rem;
+        }
+        header h1 {
+            margin: 0;
+            font-size: clamp(2rem, 2.8vw, 3.3rem);
+            letter-spacing: -0.04em;
+        }
+        header p {
+            margin: 0;
+            color: #b8c2ff;
+            max-width: 60ch;
+            line-height: 1.7;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+            padding: 1.6rem;
+            border-radius: 22px;
+            background: rgba(15, 23, 42, 0.76);
+            border: 1px solid rgba(255,255,255,0.06);
+        }
+        .card h2 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+        .field-group {
+            display: grid;
+            gap: 1rem;
+        }
+        .field {
+            display: grid;
+            gap: 0.35rem;
+        }
+        .field label {
+            font-size: 0.95rem;
+            color: #c8d0ff;
+        }
+        .field input[type="text"],
+        .field input[type="number"],
+        .field input[type="file"] {
+            width: 100%;
+            padding: 0.95rem 1rem;
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(14, 22, 40, 0.9);
+            color: #eef3ff;
+            font-size: 1rem;
+        }
+        .field input[type="file"] {
+            cursor: pointer;
+            padding: 0.65rem 0.85rem;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            margin-top: 1rem;
+        }
+        button {
+            border: none;
+            cursor: pointer;
+            border-radius: 14px;
+            padding: 0.95rem 1.5rem;
+            font-weight: 700;
+            font-size: 1rem;
+            background: linear-gradient(135deg, #6c8cff 0%, #4f7bff 100%);
+            color: white;
+            box-shadow: 0 18px 40px rgba(79, 123, 255, 0.22);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 22px 44px rgba(79, 123, 255, 0.3);
+        }
+        button:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .organ-grid {
+            display: grid;
+            gap: 1rem;
+        }
+        .organ-card {
+            padding: 1rem;
+            border-radius: 18px;
+            background: rgba(7, 15, 28, 0.85);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .organ-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+        }
+        .organ-row input[type="checkbox"] {
+            accent-color: #6c8cff;
+            width: 1.15rem;
+            height: 1.15rem;
+        }
+        .organ-row label {
+            user-select: none;
+        }
+        .notice {
+            margin-top: 0.75rem;
+            padding: 1rem 1.1rem;
+            border-radius: 16px;
+            background: rgba(70, 78, 112, 0.16);
+            border: 1px solid rgba(111, 123, 255, 0.16);
+            color: #d7ddff;
+        }
+        .status {
+            margin-top: 1rem;
+            color: #a2b0ff;
+            font-size: 0.95rem;
+        }
+        @media (min-width: 760px) {
+            .field-grid-3 {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 1rem;
+            }
+            .organ-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="frame">
+        <header>
+            <h1>Simple Gamble With Your Friends Save Editor</h1>
+            <p>Upload a local save file and edit the key values directly in your browser. Your save file is found at: %appdata%\..\LocalLow\TENSTACK</p>
+        </header>
+
+        <section class="card">
+            <h2>Step 1: Upload your save file</h2>
+            <div class="field-group">
+                <div class="field">
+                    <label for="saveFile">Choose JSON save file</label>
+                    <input id="saveFile" type="file" accept=".json" />
+                </div>
+                <div class="actions">
+                    <button id="loadButton" type="button" disabled>Load Save</button>
+                    <button id="downloadButton" type="button" disabled>Download Edited Save</button>
+                </div>
+                <p class="status" id="fileStatus">No file loaded yet.</p>
+            </div>
+        </section>
+
+        <section class="card" id="editorSection" style="display: none;">
+            <h2>Save editor</h2>
+            <div class="notice">Edit money, tickets, and seed values.</div>
+            <div class="field-grid-3">
+                <div class="field">
+                    <label for="moneyInput">Money</label>
+                    <input id="moneyInput" type="number" min="0" step="1" />
+                </div>
+                <div class="field">
+                    <label for="ticketsInput">Tickets</label>
+                    <input id="ticketsInput" type="number" min="0" step="1" />
+                </div>
+                <div class="field">
+                    <label for="seedInput">Seed</label>
+                    <input id="seedInput" type="number" step="1" />
+                </div>
+            </div>
+            <div class="status" id="saveInfo"></div>
+        </section>
+
+        <section class="card" id="organsSection" style="display: none;">
+            <h2>Player organ states</h2>
+            <div class="notice">Toggle organs on or off for each persons entry.</div>
+            <div class="organ-grid" id="organGrid"></div>
+        </section>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('saveFile');
+        const loadButton = document.getElementById('loadButton');
+        const downloadButton = document.getElementById('downloadButton');
+        const editorSection = document.getElementById('editorSection');
+        const organsSection = document.getElementById('organsSection');
+        const fileStatus = document.getElementById('fileStatus');
+        const saveInfo = document.getElementById('saveInfo');
+        const organGrid = document.getElementById('organGrid');
+        const moneyInput = document.getElementById('moneyInput');
+        const ticketsInput = document.getElementById('ticketsInput');
+        const seedInput = document.getElementById('seedInput');
+
+        let loadedFileName = '';
+        let saveData = null;
+
+        function renderEditor() {
+            if (!saveData) return;
+            editorSection.style.display = 'block';
+            organsSection.style.display = 'block';
+            moneyInput.value = Number(saveData.money ?? 0);
+            ticketsInput.value = Number(saveData.tickets ?? 0);
+            seedInput.value = Number(saveData.seed ?? 0);
+            saveInfo.textContent = `Loaded ${saveData.saveName || loadedFileName} · Money: ${moneyInput.value} · Tickets: ${ticketsInput.value} · Seed: ${seedInput.value}`;
+            renderOrganGrid();
+        }
+
+        function renderOrganGrid() {
+            organGrid.innerHTML = '';
+            if (!saveData || !Array.isArray(saveData.playerOrganStates) || saveData.playerOrganStates.length === 0) {
+                organGrid.innerHTML = '<p style="grid-column: 1 / -1; color: #d7ddff;">No player organ state entries found in this save.</p>';
+                return;
+            }
+            saveData.playerOrganStates.forEach((entry, index) => {
+                const card = document.createElement('div');
+                card.className = 'organ-card';
+                card.innerHTML = `
+                    <div style="margin-bottom: 1rem;">
+                        <strong>SteamID</strong><br />
+                        <span style="color: #aac4ff;">${entry.steamId || 'unknown'}</span>
+                    </div>
+                    <div class="organ-row">
+                        <label><input type="checkbox" data-entry="${index}" data-key="leftEye" ${entry.leftEye ? 'checked' : ''} /> leftEye</label>
+                        <label><input type="checkbox" data-entry="${index}" data-key="rightEye" ${entry.rightEye ? 'checked' : ''} /> rightEye</label>
+                        <label><input type="checkbox" data-entry="${index}" data-key="body" ${entry.body ? 'checked' : ''} /> body</label>
+                        <label><input type="checkbox" data-entry="${index}" data-key="mouth" ${entry.mouth ? 'checked' : ''} /> mouth</label>
+                    </div>
+                `;
+                organGrid.appendChild(card);
+            });
+
+            organGrid.querySelectorAll('input[type="checkbox"]').forEach(input => {
+                input.addEventListener('change', event => {
+                    const target = event.target;
+                    const entryIndex = Number(target.dataset.entry);
+                    const key = target.dataset.key;
+                    if (!saveData || !saveData.playerOrganStates || !saveData.playerOrganStates[entryIndex]) return;
+                    saveData.playerOrganStates[entryIndex][key] = target.checked;
+                });
+            });
+        }
+
+        function updateSaveDataField(key, inputElement) {
+            if (!saveData) return;
+            const value = inputElement.value;
+            saveData[key] = Number(value);
+            saveInfo.textContent = `Loaded ${saveData.saveName || loadedFileName} · Money: ${saveData.money} · Tickets: ${saveData.tickets} · Seed: ${saveData.seed}`;
+        }
+
+        function downloadSave() {
+            if (!saveData) return;
+            const jsonText = JSON.stringify(saveData, null, 4);
+            const blob = new Blob([jsonText], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `edited_${saveData.saveName || 'save'}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        loadButton.addEventListener('click', () => {
+            const file = fileInput.files?.[0];
+            if (!file) {
+                fileStatus.textContent = 'Please choose a JSON save file first.';
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = () => {
+                try {
+                    saveData = JSON.parse(reader.result);
+                    loadedFileName = file.name;
+                    fileStatus.textContent = `Loaded ${file.name}. You can now edit values and download the updated save.`;
+                    downloadButton.disabled = false;
+                    renderEditor();
+                } catch (error) {
+                    saveData = null;
+                    fileStatus.textContent = 'Invalid JSON file. Please choose a valid game save JSON file.';
+                    editorSection.style.display = 'none';
+                    organsSection.style.display = 'none';
+                    downloadButton.disabled = true;
+                }
+            };
+            reader.onerror = () => {
+                fileStatus.textContent = 'Unable to read the file. Please try again.';
+            };
+            reader.readAsText(file);
+        });
+
+        fileInput.addEventListener('change', () => {
+            loadButton.disabled = !fileInput.files?.length;
+            if (fileInput.files?.length) {
+                fileStatus.textContent = `Selected ${fileInput.files[0].name}. Press Load Save to open it.`;
+            }
+        });
+
+        moneyInput.addEventListener('input', () => updateSaveDataField('money', moneyInput));
+        ticketsInput.addEventListener('input', () => updateSaveDataField('tickets', ticketsInput));
+        seedInput.addEventListener('input', () => updateSaveDataField('seed', seedInput));
+
+        downloadButton.addEventListener('click', downloadSave);
+    </script>
+</body>
+</html>
