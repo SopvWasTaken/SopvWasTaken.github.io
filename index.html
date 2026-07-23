@@ -189,5 +189,31 @@
       setInterval(updateLastFm, 10000);
     })();
   </script>
+  <div id="kawCorner" style="position:fixed;bottom:16px;right:16px;z-index:9999;cursor:pointer;user-select:none;">
+    <img id="kawCornerImg" src="/Textures/KawKaw/kaw_idle.gif" alt="Kaw" style="display:block;width:120px;height:auto;pointer-events:none;" />
+    <audio id="kawCornerAudio" src="/Textures/KawKaw/kaw.mp3"></audio>
+  </div>
+  <script>
+    (function() {
+      const idleSrc = '/Textures/KawKaw/kaw_idle.gif';
+      const lickSrc = '/Textures/KawKaw/kaw_lick.gif';
+      const img = document.getElementById('kawCornerImg');
+      const audio = document.getElementById('kawCornerAudio');
+      const wrapper = document.getElementById('kawCorner');
+      let timer = null;
+
+      if (!img || !audio || !wrapper) return;
+
+      wrapper.addEventListener('click', () => {
+        img.src = lickSrc;
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          img.src = idleSrc;
+        }, 1000);
+      });
+    })();
+  </script>
   </body>
 </html>
