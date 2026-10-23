@@ -283,7 +283,7 @@
               const extraLarge = images.find(img => img.size === 'extralarge');
               coverUrl = extraLarge ? extraLarge['#text'] : images[images.length - 1]['#text'];
             }
-            coverEl.src = coverUrl || '"../Textures/hi.jpg" width="174" height="174"%3E%3Crect fill="%23222" width="174" height="174"/%3E%3C/svg%3E';
+            coverEl.src = coverUrl || `"../Textures/hi.jpg" width="174" height="174"%3E%3Crect fill="%23222" width="174" height="174"/%3E%3C/svg%3E`;
             coverEl.alt = data.track.name + ' cover';
             
             trackEl.textContent = data.track.name || 'Unknown Track';
